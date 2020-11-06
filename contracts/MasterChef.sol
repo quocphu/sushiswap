@@ -1,6 +1,5 @@
 pragma solidity 0.6.12;
 
-
 import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import "@openzeppelin/contracts/token/ERC20/SafeERC20.sol";
 import "@openzeppelin/contracts/utils/EnumerableSet.sol";
@@ -8,6 +7,8 @@ import "@openzeppelin/contracts/math/SafeMath.sol";
 import "@openzeppelin/contracts/access/Ownable.sol";
 import "./SushiToken.sol";
 
+// The bonus time is separated to 5 phases instead of 2 as the original
+//
 
 interface IMigratorChef {
     // Perform LP token migration from legacy UniswapV2 to SushiSwap.
@@ -32,6 +33,25 @@ interface IMigratorChef {
 contract MasterChef is Ownable {
     using SafeMath for uint256;
     using SafeERC20 for IERC20;
+
+    // uint256 constant WEEK_BLOCKS = 46522;
+    uint256 constant WEEK_BLOCKS = 10; // TODO it for test only
+    uint256 constant PHASE1_DURATION = WEEK_BLOCKS*1;
+    uint256 constant PHASE2_DURATION = WEEK_BLOCKS*2;
+    uint256 constant PHASE3_DURATION = WEEK_BLOCKS*3;
+    uint256 constant PHASE4_DURATION = WEEK_BLOCKS*4;
+    uint256 constant PHASE5_DURATION = WEEK_BLOCKS*5;
+
+    uint256 constant DURATION_1_2 = PHASE1_DURATION + PHASE2_DURATION;
+    uint256 constant DURATION_1_3 = DURATION_1_2 + PHASE3_DURATION;
+    uint256 constant DURATION_1_4 = DURATION_1_3 + PHASE4_DURATION;
+    uint256 constant DURATION_1_5 = DURATION_1_4 + PHASE5_DURATION;
+
+    uint256 constant PHASE1_BONUS_MULTIPLIER = 16;
+    uint256 constant PHASE2_BONUS_MULTIPLIER = 8;
+    uint256 constant PHASE3_BONUS_MULTIPLIER = 4;
+    uint256 constant PHASE4_BONUS_MULTIPLIER = 2;
+    uint256 constant PHASE5_BONUS_MULTIPLIER = 1;
 
     // Info of each user.
     struct UserInfo {
@@ -62,8 +82,9 @@ contract MasterChef is Ownable {
     SushiToken public sushi;
     // Dev address.
     address public devaddr;
-    // Block number when bonus SUSHI period ends.
-    uint256 public bonusEndBlock;
+    // Operation address
+    address public opaddr;
+
     // SUSHI tokens created per block.
     uint256 public sushiPerBlock;
     // Bonus muliplier for early sushi makers.
@@ -87,14 +108,14 @@ contract MasterChef is Ownable {
     constructor(
         SushiToken _sushi,
         address _devaddr,
+        address _opaddr,
         uint256 _sushiPerBlock,
-        uint256 _startBlock,
-        uint256 _bonusEndBlock
+        uint256 _startBlock
     ) public {
         sushi = _sushi;
         devaddr = _devaddr;
+        opaddr = _opaddr;
         sushiPerBlock = _sushiPerBlock;
-        bonusEndBlock = _bonusEndBlock;
         startBlock = _startBlock;
     }
 
@@ -146,15 +167,57 @@ contract MasterChef is Ownable {
 
     // Return reward multiplier over the given _from to _to block.
     function getMultiplier(uint256 _from, uint256 _to) public view returns (uint256) {
-        if (_to <= bonusEndBlock) {
-            return _to.sub(_from).mul(BONUS_MULTIPLIER);
-        } else if (_from >= bonusEndBlock) {
-            return _to.sub(_from);
-        } else {
-            return bonusEndBlock.sub(_from).mul(BONUS_MULTIPLIER).add(
-                _to.sub(bonusEndBlock)
-            );
+
+        if (_from >= startBlock + DURATION_1_5) {
+            return _to - _from;
         }
+
+        uint256 multiplier = 0;
+
+        if (_from < startBlock + PHASE1_DURATION) {
+            if (_to < startBlock + PHASE1_DURATION) {
+                return PHASE1_BONUS_MULTIPLIER * (_to - _from);
+            }
+            multiplier += (PHASE1_BONUS_MULTIPLIER * (startBlock + PHASE1_DURATION - _from));
+        }
+
+        if (_from < startBlock + DURATION_1_2) {
+            if (_to < startBlock + DURATION_1_2) {
+                return multiplier + PHASE2_BONUS_MULTIPLIER * (_to - _from);
+            }
+            multiplier += (PHASE2_BONUS_MULTIPLIER * (startBlock + DURATION_1_2 - _from));
+        }
+        if (_from < startBlock + DURATION_1_3) {
+            if (_to < startBlock + DURATION_1_3) {
+                return multiplier + PHASE3_BONUS_MULTIPLIER * (_to - _from);
+            }
+            multiplier += (PHASE3_BONUS_MULTIPLIER * (startBlock + DURATION_1_3 - _from));
+        }
+
+        if (_from < startBlock + DURATION_1_4) {
+            if (_to < startBlock + DURATION_1_4) {
+                return multiplier + PHASE4_BONUS_MULTIPLIER * (_to - _from);
+            }
+            multiplier += (PHASE4_BONUS_MULTIPLIER * (startBlock + DURATION_1_4 - _from));
+        }
+
+        if (_from < startBlock + DURATION_1_5) {
+            if (_to < startBlock + DURATION_1_5) {
+                return multiplier + PHASE5_BONUS_MULTIPLIER * (_to - _from);
+            }
+            multiplier += (PHASE5_BONUS_MULTIPLIER * (startBlock + DURATION_1_5 - _from));
+        }
+
+
+        // if (_to <= bonusEndBlock) {
+        //     return _to.sub(_from).mul(BONUS_MULTIPLIER);
+        // } else if (_from >= bonusEndBlock) {
+        //     return _to.sub(_from);
+        // } else {
+        //     return bonusEndBlock.sub(_from).mul(BONUS_MULTIPLIER).add(
+        //         _to.sub(bonusEndBlock)
+        //     );
+        // }
     }
 
     // View function to see pending SUSHIs on frontend.
@@ -193,6 +256,7 @@ contract MasterChef is Ownable {
         uint256 multiplier = getMultiplier(pool.lastRewardBlock, block.number);
         uint256 sushiReward = multiplier.mul(sushiPerBlock).mul(pool.allocPoint).div(totalAllocPoint);
         sushi.mint(devaddr, sushiReward.div(10));
+        sushi.mint(opaddr, sushiReward.div(10));
         sushi.mint(address(this), sushiReward);
         pool.accSushiPerShare = pool.accSushiPerShare.add(sushiReward.mul(1e12).div(lpSupply));
         pool.lastRewardBlock = block.number;
@@ -200,6 +264,7 @@ contract MasterChef is Ownable {
 
     // Deposit LP tokens to MasterChef for SUSHI allocation.
     function deposit(uint256 _pid, uint256 _amount) public {
+        require(block.number <= startBlock + DURATION_1_5, "END");
         PoolInfo storage pool = poolInfo[_pid];
         UserInfo storage user = userInfo[_pid][msg.sender];
         updatePool(_pid);

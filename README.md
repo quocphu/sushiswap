@@ -16,3 +16,32 @@ https://app.sushiswap.org. Feel free to read the code. More details coming soon.
 ## License
 
 WTFPL
+
+## -----------------
+last commit:8299029013e151b6e7fff9634ba439d91ae3487a
+## -----------------
+
+## Deploy order
+* UniswapFactory
+* UniswapRouter
+* SushiToken
+* MasterChef
+* Migrator
+
+Rinkeby:
+WETH: 0xc778417E063141139Fce010982780140Aa0cD5Ab
+UniFactory: 0x5C69bEe701ef814a2B6a3EDD4B1652CB9cc5aA6f
+
+Factory: 0x8215Cb35fE3f485Bd573a4DbA3F72a818E5E9ddF
+Router: 0x9b0ef603998982F787c731Cf5247A902c1885961
+SushiToken: 0x629E8e24347bf76173047B44e6e3DF98f85419A1
+MasterChef: 0x7151d6974B25276B3e65E9a72F161DE4e2126017
+Migrator: 0x7671999f09dcD8b49acb4DFe0eD24b113F200c00
+
+Transfer onwership of Sushi token to MasterChef,
+Add pool in MasterChef
+
+ERC20 token
+FreeX: 0xee7f4606be40fc672de58217170d045f1aceb045
+FreeY: 0x88F377118382c382992873AB9CCc5a30535f5Fb0
+Uniswap pair: 0x113f6091f59b200227a0ce7439ffcc274594c057
