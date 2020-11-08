@@ -90,6 +90,91 @@ contract('MasterChef', ([alice, bob, carol, dev, op, minter]) => {
         assert.equal((await this.sushi.totalSupply()).toString(10), expectedBalance.add(extraAmount).add(extraAmount).toString(10));
 
         // Go to 2nd phase, reward
+        await mintBlock(5) // block 25
+
+        // 1 block in phase 2
+        await this.chef.deposit(0, '0', { from: bob }); // block 26
+        var p1Rw = new BN(10,10).mul(sushiPerBlock.mul(BN16)) // P1 reward
+        var p2Rw = new BN(1,10).mul(sushiPerBlock.mul(BN8)) // P2 reward
+        var expectedBalance = p1Rw.add(p2Rw);
+        assert.equal((await this.sushi.balanceOf(bob)).toString(10), expectedBalance.toString(10));
+
+        // 2 blocks in phase 2
+        await this.chef.deposit(0, '0', { from: bob }); // block 27
+        var p1Rw = new BN(10,10).mul(sushiPerBlock.mul(BN16)) // P1 reward
+        var p2Rw = new BN(2,10).mul(sushiPerBlock.mul(BN8)) // P2 reward
+        var expectedBalance = p1Rw.add(p2Rw);
+        assert.equal((await this.sushi.balanceOf(bob)).toString(10), expectedBalance.toString(10));
+
+        // Go to 3rd phase, reward
+        await mintBlock(18) // block 45
+
+        // 1 block in phase 3
+        await this.chef.deposit(0, '0', { from: bob }); // block 46
+        var p1Rw = new BN(10,10).mul(sushiPerBlock.mul(BN16)) // P1 reward
+        var p2Rw = new BN(20,10).mul(sushiPerBlock.mul(BN8)) // P2 reward
+        var p3Rw = new BN(1,10).mul(sushiPerBlock.mul(BN4)) // P3 reward
+        var expectedBalance = p1Rw.add(p2Rw).add(p3Rw);
+        assert.equal((await this.sushi.balanceOf(bob)).toString(10), expectedBalance.toString(10));
+
+        // 2 blocks in phase 3
+        await this.chef.deposit(0, '0', { from: bob }); // block 47
+        var p1Rw = new BN(10,10).mul(sushiPerBlock.mul(BN16)) // P1 reward
+        var p2Rw = new BN(20,10).mul(sushiPerBlock.mul(BN8)) // P2 reward
+        var p3Rw = new BN(2,10).mul(sushiPerBlock.mul(BN4)) // P3 reward
+        var expectedBalance = p1Rw.add(p2Rw).add(p3Rw);
+        assert.equal((await this.sushi.balanceOf(bob)).toString(10), expectedBalance.toString(10));
+
+        // Go to 4th phase, reward
+         await mintBlock(38) // block 85
+
+         // 1 block in phase 4
+         await this.chef.deposit(0, '0', { from: bob }); // block 86
+         var p1Rw = new BN(10,10).mul(sushiPerBlock.mul(BN16)) // P1 reward
+         var p2Rw = new BN(20,10).mul(sushiPerBlock.mul(BN8)) // P2 reward
+         var p3Rw = new BN(40,10).mul(sushiPerBlock.mul(BN4)) // P3 reward
+         var p4Rw = new BN(1,10).mul(sushiPerBlock.mul(BN2)) // P4 reward
+         var expectedBalance = p1Rw.add(p2Rw).add(p3Rw).add(p4Rw);
+         assert.equal((await this.sushi.balanceOf(bob)).toString(10), expectedBalance.toString(10));
+ 
+         // 2 blocks in phase 4
+         await this.chef.deposit(0, '0', { from: bob }); // block 87
+         var p1Rw = new BN(10,10).mul(sushiPerBlock.mul(BN16)) // P1 reward
+         var p2Rw = new BN(20,10).mul(sushiPerBlock.mul(BN8)) // P2 reward
+         var p3Rw = new BN(40,10).mul(sushiPerBlock.mul(BN4)) // P3 reward
+         var p4Rw = new BN(2,10).mul(sushiPerBlock.mul(BN2)) // P4 reward
+         var expectedBalance = p1Rw.add(p2Rw).add(p3Rw).add(p4Rw);
+         assert.equal((await this.sushi.balanceOf(bob)).toString(10), expectedBalance.toString(10));
+
+        // Go to 5th phase, reward
+        await mintBlock(78) // block 155
+        // 1 block in phase 4
+        await this.chef.deposit(0, '0', { from: bob }); // block 156
+        var p1Rw = new BN(10,10).mul(sushiPerBlock.mul(BN16)) // P1 reward
+        var p2Rw = new BN(20,10).mul(sushiPerBlock.mul(BN8)) // P2 reward
+        var p3Rw = new BN(40,10).mul(sushiPerBlock.mul(BN4)) // P3 reward
+        var p4Rw = new BN(80,10).mul(sushiPerBlock.mul(BN2)) // P4 reward
+        var p5Rw = new BN(1,10).mul(sushiPerBlock.mul(BN1)) // P5 reward
+        var expectedBalance = p1Rw.add(p2Rw).add(p3Rw).add(p4Rw).add(p5Rw);
+        assert.equal((await this.sushi.balanceOf(bob)).toString(10), expectedBalance.toString(10));
+        
+         // 2 blocks in phase 4
+        await this.chef.deposit(0, '0', { from: bob }); // block 157
+        var p1Rw = new BN(10,10).mul(sushiPerBlock.mul(BN16)) // P1 reward
+        var p2Rw = new BN(20,10).mul(sushiPerBlock.mul(BN8)) // P2 reward
+        var p3Rw = new BN(40,10).mul(sushiPerBlock.mul(BN4)) // P3 reward
+        var p4Rw = new BN(80,10).mul(sushiPerBlock.mul(BN2)) // P4 reward
+        var p5Rw = new BN(2,10).mul(sushiPerBlock.mul(BN1)) // P5 reward
+        var expectedBalance = p1Rw.add(p2Rw).add(p3Rw).add(p4Rw).add(p5Rw);
+        assert.equal((await this.sushi.balanceOf(bob)).toString(10), expectedBalance.toString(10));
+
+        // Deposit after 5th phase
+        await mintBlock(158) // block 315
+        // 1 block in phase 4
+        await this.chef.deposit(0, '0', { from: bob }); // block 316
+        assert.equal((await this.sushi.balanceOf(bob)).toString(10), expectedBalance.toString(10));
+
+
     });
 
     it('should distribute SUSHIs properly for each staker', async () => {
