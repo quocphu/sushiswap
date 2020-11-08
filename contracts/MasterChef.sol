@@ -37,10 +37,10 @@ contract MasterChef is Ownable {
     // uint256 constant WEEK_BLOCKS = 46522;
     uint256 constant WEEK_BLOCKS = 10; // TODO it for test only
     uint256 constant PHASE1_DURATION = WEEK_BLOCKS*1;
-    uint256 constant PHASE2_DURATION = WEEK_BLOCKS*2;
-    uint256 constant PHASE3_DURATION = WEEK_BLOCKS*3;
-    uint256 constant PHASE4_DURATION = WEEK_BLOCKS*4;
-    uint256 constant PHASE5_DURATION = WEEK_BLOCKS*5;
+    uint256 constant PHASE2_DURATION = PHASE1_DURATION*2;
+    uint256 constant PHASE3_DURATION = PHASE2_DURATION*2;
+    uint256 constant PHASE4_DURATION = PHASE3_DURATION*2;
+    uint256 constant PHASE5_DURATION = PHASE4_DURATION*2;
 
     uint256 constant DURATION_1_2 = PHASE1_DURATION + PHASE2_DURATION;
     uint256 constant DURATION_1_3 = DURATION_1_2 + PHASE3_DURATION;
@@ -168,46 +168,59 @@ contract MasterChef is Ownable {
     // Return reward multiplier over the given _from to _to block.
     function getMultiplier(uint256 _from, uint256 _to) public view returns (uint256) {
 
-        if (_from >= startBlock + DURATION_1_5) {
-            return _to - _from;
+        // Out of all phases
+        if (_from > startBlock + DURATION_1_5) {
+            return 0;
+        }
+        if (_from < startBlock) {
+            _from = startBlock;
+        }
+        if (_to > startBlock + DURATION_1_5) {
+            _to = startBlock + DURATION_1_5;
         }
 
         uint256 multiplier = 0;
 
         if (_from < startBlock + PHASE1_DURATION) {
-            if (_to < startBlock + PHASE1_DURATION) {
+            if (_to <= startBlock + PHASE1_DURATION) {
                 return PHASE1_BONUS_MULTIPLIER * (_to - _from);
             }
             multiplier += (PHASE1_BONUS_MULTIPLIER * (startBlock + PHASE1_DURATION - _from));
+            _from = startBlock + PHASE1_DURATION;
         }
 
         if (_from < startBlock + DURATION_1_2) {
-            if (_to < startBlock + DURATION_1_2) {
+            if (_to <= startBlock + DURATION_1_2) {
                 return multiplier + PHASE2_BONUS_MULTIPLIER * (_to - _from);
             }
             multiplier += (PHASE2_BONUS_MULTIPLIER * (startBlock + DURATION_1_2 - _from));
+            _from = startBlock + DURATION_1_2;
         }
+
         if (_from < startBlock + DURATION_1_3) {
-            if (_to < startBlock + DURATION_1_3) {
+            if (_to <= startBlock + DURATION_1_3) {
                 return multiplier + PHASE3_BONUS_MULTIPLIER * (_to - _from);
             }
             multiplier += (PHASE3_BONUS_MULTIPLIER * (startBlock + DURATION_1_3 - _from));
+            _from = startBlock + DURATION_1_3;
         }
 
         if (_from < startBlock + DURATION_1_4) {
-            if (_to < startBlock + DURATION_1_4) {
+            if (_to <= startBlock + DURATION_1_4) {
                 return multiplier + PHASE4_BONUS_MULTIPLIER * (_to - _from);
             }
             multiplier += (PHASE4_BONUS_MULTIPLIER * (startBlock + DURATION_1_4 - _from));
+            _from = startBlock + DURATION_1_4;
         }
 
         if (_from < startBlock + DURATION_1_5) {
-            if (_to < startBlock + DURATION_1_5) {
+            if (_to <= startBlock + DURATION_1_5) {
                 return multiplier + PHASE5_BONUS_MULTIPLIER * (_to - _from);
             }
             multiplier += (PHASE5_BONUS_MULTIPLIER * (startBlock + DURATION_1_5 - _from));
         }
 
+        return multiplier;
 
         // if (_to <= bonusEndBlock) {
         //     return _to.sub(_from).mul(BONUS_MULTIPLIER);

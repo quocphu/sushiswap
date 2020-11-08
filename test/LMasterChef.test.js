@@ -21,6 +21,18 @@ contract('MasterChef', ([alice, bob, carol, dev, op, minter]) => {
     var BN2 = new BN(2, 10);
     var BN1 = new BN(1, 10);
 
+    var WEEK_BLOCKS = new BN(10, 10);
+    var PHASE1_DURATION = WEEK_BLOCKS;
+    var PHASE2_DURATION = PHASE1_DURATION.mul(new BN(2, 10));
+    var PHASE3_DURATION = PHASE2_DURATION.mul(new BN(2, 10));
+    var PHASE4_DURATION = PHASE3_DURATION.mul(new BN(2, 10));
+    var PHASE5_DURATION = PHASE4_DURATION.mul(new BN(2, 10));
+
+    var DURATION_1_2 = PHASE1_DURATION.add(PHASE2_DURATION);
+    var DURATION_1_3 = DURATION_1_2.add( PHASE3_DURATION);
+    var DURATION_1_4 = DURATION_1_3.add(PHASE4_DURATION);
+    var DURATION_1_5 = DURATION_1_4.add(PHASE5_DURATION);
+
     beforeEach(async () => {
         this.sushi = await SushiToken.new({ from: alice });
 
@@ -44,7 +56,7 @@ contract('MasterChef', ([alice, bob, carol, dev, op, minter]) => {
         await this.chef.add('1', this.lp.address, true); // block 2
         await this.lp.approve(this.chef.address, '1000'+decZero, { from: bob }); // block 3
 
-        // Dep before start
+        // Deposit before start
         await this.chef.deposit(0, '100', { from: bob }); // block 4
         await mintBlock(2); // block 6
         await this.chef.deposit(0, '0', { from: bob }); // block 7
