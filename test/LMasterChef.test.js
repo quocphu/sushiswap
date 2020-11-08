@@ -3,7 +3,7 @@ const SushiToken = artifacts.require('SushiToken');
 const MasterChef = artifacts.require('MasterChef');
 const MockERC20 = artifacts.require('MockERC20');
 const BN = require('web3').utils.BN;
-contract('MasterChef', ([alice, bob, carol, dev, op, minter]) => {
+contract('MasterChef', ([alice, bob, carol, dave, dev, op, minter]) => {
     async function mintBlock(num) {
         for (var i = 0; i < num; i++) {
             await time.advanceBlock();
@@ -20,6 +20,8 @@ contract('MasterChef', ([alice, bob, carol, dev, op, minter]) => {
     var BN4 = new BN(4, 10);
     var BN2 = new BN(2, 10);
     var BN1 = new BN(1, 10);
+
+    var BN3 = new BN(3, 10);
 
     var WEEK_BLOCKS = new BN(10, 10);
     var PHASE1_DURATION = WEEK_BLOCKS;
@@ -40,14 +42,16 @@ contract('MasterChef', ([alice, bob, carol, dev, op, minter]) => {
         await this.lp.transfer(alice, mintAmount, { from: minter });
         await this.lp.transfer(bob, mintAmount, { from: minter });
         await this.lp.transfer(carol, mintAmount, { from: minter });
+        await this.lp.transfer(dave, mintAmount, { from: minter });
 
         this.lp2 = await MockERC20.new('LPToken2', 'LP2', totalLPSupply, { from: minter });
         await this.lp2.transfer(alice, mintAmount, { from: minter });
         await this.lp2.transfer(bob, mintAmount, { from: minter });
         await this.lp2.transfer(carol, mintAmount, { from: minter });
+        await this.lp2.transfer(dave, mintAmount, { from: minter });
     });
 
-    it('should give out SUSHIs only after farming time', async () => {
+    it('should give out SUSHIs only after farming time', async () => { return;// TODO
         // Start at block 100
         var latestBlock = await time.latestBlock();
         startBlock = latestBlock.add(new BN(15,10));
@@ -168,75 +172,60 @@ contract('MasterChef', ([alice, bob, carol, dev, op, minter]) => {
         var expectedBalance = p1Rw.add(p2Rw).add(p3Rw).add(p4Rw).add(p5Rw);
         assert.equal((await this.sushi.balanceOf(bob)).toString(10), expectedBalance.toString(10));
 
-        // Deposit after 5th phase
-        await mintBlock(158) // block 315
-        // 1 block in phase 4
+        await mintBlock(157) // block 315
+        // OK to Deposit at the end block of phase 5
         await this.chef.deposit(0, '0', { from: bob }); // block 316
-        assert.equal((await this.sushi.balanceOf(bob)).toString(10), expectedBalance.toString(10));
-
-
+        // assert.equal((await this.sushi.balanceOf(bob)).toString(10), expectedBalance.toString(10));
+        // Not OK to Deposit after 5th phase
+        try {
+            await this.chef.deposit(0, '0', { from: bob }); // block 316
+            assert.fail("SHOULD FAILED");
+        } catch(err) {
+            var msg = 'END';
+            assert.equal(err.reason, msg)
+        }
     });
 
     it('should distribute SUSHIs properly for each staker', async () => {
-        return;
-        // 100 per block farming rate starting at block 300 with bonus until block 1000
-        this.chef = await MasterChef.new(this.sushi.address, dev, op, sushiPerBlock, 300, { from: alice });
-        await this.sushi.transferOwnership(this.chef.address, { from: alice });
-        await this.chef.add('1', this.lp.address, true);
-        await this.lp.approve(this.chef.address, mintAmount, { from: alice });
-        await this.lp.approve(this.chef.address, mintAmount, { from: bob });
-        await this.lp.approve(this.chef.address, mintAmount, { from: carol });
+        // Start at block 100
+        var latestBlock = await time.latestBlock();
+        startBlock = latestBlock.add(new BN(15,10));
+        this.chef = await MasterChef.new(this.sushi.address, dev, op, sushiPerBlock, startBlock, { from: alice });
+        await this.sushi.transferOwnership(this.chef.address, { from: alice }); // block 1
+        await this.chef.add('1', this.lp.address, true); // block 2
+        await this.lp.approve(this.chef.address, mintAmount, { from: bob }); // block 3
+        await this.lp.approve(this.chef.address, mintAmount, { from: carol }); // block 4
+        await this.lp.approve(this.chef.address, mintAmount, { from: dave }); // block 5
+        
+        // Deposit before start
+        await this.chef.deposit(0, '100', { from: bob }); // block 6
+        await this.chef.deposit(0, '50', { from: carol }); // block 7
 
-        // Alice deposits 10 LPs at block 310
-        await time.advanceBlockTo('309');
-        await this.chef.deposit(0, '10'+decZero, { from: alice });
-        // Bob deposits 20 LPs at block 314
-        await time.advanceBlockTo('313');
-        await this.chef.deposit(0, '20'+decZero, { from: bob });
-        // Carol deposits 30 LPs at block 318
-        await time.advanceBlockTo('317');
-        await this.chef.deposit(0, '30', { from: carol });
-        // Alice deposits 10 more LPs at block 320. At this point:
-        //   Alice should have: 4*1000 + 4*1/3*1000 + 2*1/6*1000 = 5666
-        //   MasterChef should have the remaining: 10000 - 5666 = 4334
-        await time.advanceBlockTo('319')
-        await this.chef.deposit(0, '10', { from: alice });
-        assert.equal((await this.sushi.totalSupply()).valueOf(), '11000');
-        assert.equal((await this.sushi.balanceOf(alice)).valueOf(), '5666');
-        assert.equal((await this.sushi.balanceOf(bob)).valueOf(), '0');
-        assert.equal((await this.sushi.balanceOf(carol)).valueOf(), '0');
-        assert.equal((await this.sushi.balanceOf(this.chef.address)).valueOf(), '4334');
-        assert.equal((await this.sushi.balanceOf(dev)).valueOf(), mintAmount);
-        // Bob withdraws 5 LPs at block 330. At this point:
-        //   Bob should have: 4*2/3*1000 + 2*2/6*1000 + 10*2/7*1000 = 6190
-        await time.advanceBlockTo('329')
-        await this.chef.withdraw(0, '5', { from: bob });
-        assert.equal((await this.sushi.totalSupply()).valueOf(), '22000');
-        assert.equal((await this.sushi.balanceOf(alice)).valueOf(), '5666');
-        assert.equal((await this.sushi.balanceOf(bob)).valueOf(), '6190');
-        assert.equal((await this.sushi.balanceOf(carol)).valueOf(), '0');
-        assert.equal((await this.sushi.balanceOf(this.chef.address)).valueOf(), '8144');
-        assert.equal((await this.sushi.balanceOf(dev)).valueOf(), '2000');
-        // Alice withdraws 20 LPs at block 340.
-        // Bob withdraws 15 LPs at block 350.
-        // Carol withdraws 30 LPs at block 360.
-        await time.advanceBlockTo('339')
-        await this.chef.withdraw(0, '20', { from: alice });
-        await time.advanceBlockTo('349')
-        await this.chef.withdraw(0, '15', { from: bob });
-        await time.advanceBlockTo('359')
-        await this.chef.withdraw(0, '30', { from: carol });
-        assert.equal((await this.sushi.totalSupply()).valueOf(), '55000');
-        assert.equal((await this.sushi.balanceOf(dev)).valueOf(), '5000');
-        // Alice should have: 5666 + 10*2/7*1000 + 10*2/6.5*1000 = 11600
-        assert.equal((await this.sushi.balanceOf(alice)).valueOf(), '11600');
-        // Bob should have: 6190 + 10*1.5/6.5 * 1000 + 10*1.5/4.5*1000 = 11831
-        assert.equal((await this.sushi.balanceOf(bob)).valueOf(), '11831');
-        // Carol should have: 2*3/6*1000 + 10*3/7*1000 + 10*3/6.5*1000 + 10*3/4.5*1000 + 10*1000 = 26568
-        assert.equal((await this.sushi.balanceOf(carol)).valueOf(), '26568');
-        // All of them should have 1000 LPs back.
-        assert.equal((await this.lp.balanceOf(alice)).valueOf(), mintAmount);
-        assert.equal((await this.lp.balanceOf(bob)).valueOf(), mintAmount);
-        assert.equal((await this.lp.balanceOf(carol)).valueOf(), mintAmount);
+        await mintBlock(7); // block 14
+        await this.chef.deposit(0, '0', { from: bob }); // block 15
+        // Bob's balance = 1*sushiPerBlock*16*2/3
+        var expectedBobBl = BN16.mul(BN1).mul(sushiPerBlock).mul(BN2).div(BN3);
+        var bobBl = await this.sushi.balanceOf(bob);
+        assert.equal(bobBl.toString(10), expectedBobBl.toString(10));
+
+        await this.chef.deposit(0, '0', { from: carol }); // block 16
+
+        // Carol's balance = 2*sushiPerBlock*16*1/3
+        var expectedCarolBl = BN16.mul(BN2).mul(sushiPerBlock).mul(BN1).div(BN3);
+
+        var carolBl = await this.sushi.balanceOf(carol);
+        assert.equal(carolBl.toString(10), expectedCarolBl.toString(10));
+
+        await this.chef.deposit(0, '50', { from: dave }); // block 17
+
+        await mintBlock(2); // block 19
+
+        await this.chef.deposit(0, '0', { from: dave }); // block 20
+
+        // Dave's balance = 3*sushiPerBlock*16*1/4
+        var expectedDaveBl = BN16.mul(BN3).mul(sushiPerBlock).mul(BN1).div(BN4);
+        var daveBl = await this.sushi.balanceOf(dave);
+        assert.equal(daveBl.toString(10), expectedDaveBl.toString(10));
+
     });
 });
