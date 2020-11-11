@@ -27,6 +27,8 @@ last commit:8299029013e151b6e7fff9634ba439d91ae3487a
 * SushiToken
 * MasterChef
 * Migrator
+* SushiBar
+* SushiMaker <-- Factory is uniswap factory
 
 Rinkeby:
 WETH: 0xc778417E063141139Fce010982780140Aa0cD5Ab

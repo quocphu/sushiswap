@@ -47,13 +47,11 @@ contract SushiBar is ERC20("SushiBar", "xSUSHI") {
         sushi.transfer(msg.sender, what);
     }
 
-    function transfer(address recipient, uint256 amount) public virtual override(ERC20) returns (bool) {
+    function transfer(address recipient, uint256 amount) public virtual override returns (bool) {
         revert("NOT SUPPORT");
-        return false;
     }
 
-    function transferFrom(address sender, address recipient, uint256 amount) public virtual override(ERC20) returns (bool) {
+    function transferFrom(address sender, address recipient, uint256 amount) public virtual override returns (bool) {
         revert("NOT SUPPORT");
-        return false;
     }
 }
