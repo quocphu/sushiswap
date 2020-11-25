@@ -335,8 +335,14 @@ contract MasterChef is Ownable {
     }
 
     // Update dev address by the previous dev.
-    function dev(address _devaddr) public {
+    function changeDevAddress(address _devaddr) public {
         require(msg.sender == devaddr, "dev: wut?");
         devaddr = _devaddr;
+    }
+
+    // Update op address by the previous dev.
+    function changeOpAddress(address _opaddr) public {
+        require(msg.sender == opaddr, "op: wut?");
+        opaddr = _opaddr;
     }
 }

@@ -25,7 +25,7 @@ last commit:8299029013e151b6e7fff9634ba439d91ae3487a
 * UniswapFactory --> get code hash
 * UniswapRouter <-- change code hash from preceded step
 * SushiToken
-* MasterChef
+* MasterChef <-- Update migrator
 * Migrator
 * SushiBar
 * SushiMaker <-- Factory is uniswap factory
