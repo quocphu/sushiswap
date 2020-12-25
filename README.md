@@ -24,7 +24,7 @@ last commit:8299029013e151b6e7fff9634ba439d91ae3487a
 ## Deploy order
 * UniswapFactory --> get code hash
 * UniswapRouter <-- change code hash from preceded step
-* SushiToken
+* SushiToken <-- change owner to MasterChef address
 * MasterChef <-- Update migrator
 * Migrator
 * SushiBar

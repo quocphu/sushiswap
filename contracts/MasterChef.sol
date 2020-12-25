@@ -80,10 +80,6 @@ contract MasterChef is Ownable {
 
     // The SUSHI TOKEN!
     SushiToken public sushi;
-    // Dev address.
-    address public devaddr;
-    // Operation address
-    address public opaddr;
 
     // SUSHI tokens created per block.
     uint256 public sushiPerBlock;
@@ -107,14 +103,10 @@ contract MasterChef is Ownable {
 
     constructor(
         SushiToken _sushi,
-        address _devaddr,
-        address _opaddr,
         uint256 _sushiPerBlock,
         uint256 _startBlock
     ) public {
         sushi = _sushi;
-        devaddr = _devaddr;
-        opaddr = _opaddr;
         sushiPerBlock = _sushiPerBlock;
         startBlock = _startBlock;
     }
@@ -268,8 +260,7 @@ contract MasterChef is Ownable {
         }
         uint256 multiplier = getMultiplier(pool.lastRewardBlock, block.number);
         uint256 sushiReward = multiplier.mul(sushiPerBlock).mul(pool.allocPoint).div(totalAllocPoint);
-        sushi.mint(devaddr, sushiReward.div(10));
-        sushi.mint(opaddr, sushiReward.div(10));
+
         sushi.mint(address(this), sushiReward);
         pool.accSushiPerShare = pool.accSushiPerShare.add(sushiReward.mul(1e12).div(lpSupply));
         pool.lastRewardBlock = block.number;
@@ -334,15 +325,4 @@ contract MasterChef is Ownable {
         }
     }
 
-    // Update dev address by the previous dev.
-    function changeDevAddress(address _devaddr) public {
-        require(msg.sender == devaddr, "dev: wut?");
-        devaddr = _devaddr;
-    }
-
-    // Update op address by the previous dev.
-    function changeOpAddress(address _opaddr) public {
-        require(msg.sender == opaddr, "op: wut?");
-        opaddr = _opaddr;
-    }
 }

@@ -13,6 +13,18 @@ contract SushiToken is ERC20("LYN.FINANCE", "LYNFI"), Ownable {
         _moveDelegates(address(0), _delegates[_to], _amount);
     }
 
+    constructor (address operationWallet, address timeLockWallet) public {
+        // Default decimals is 18
+        uint256 _amount = 7500 * 10**18;
+        _mint(operationWallet, _amount);
+        _moveDelegates(address(0), _delegates[operationWallet], _amount);
+
+        uint256 _lockAmount = 2500 * 10**18;
+        _mint(timeLockWallet, _lockAmount);
+        _moveDelegates(address(0), _delegates[timeLockWallet], _lockAmount);
+
+    }
+
     // Copied and modified from YAM code:
     // https://github.com/yam-finance/yam-protocol/blob/master/contracts/token/YAMGovernanceStorage.sol
     // https://github.com/yam-finance/yam-protocol/blob/master/contracts/token/YAMGovernance.sol
